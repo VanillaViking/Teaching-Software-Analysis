@@ -6,7 +6,7 @@ project(Teaching-Software-Analysis
         HOMEPAGE_URL "https://github.com/SVF-tools/Teaching-Software-Analysis"
         LANGUAGES C CXX
 )
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Check if the LLVM_DIR environment variable is defined and set it accordingly
 if (DEFINED LLVM_DIR)
     set(ENV{LLVM_DIR} "${LLVM_DIR}")

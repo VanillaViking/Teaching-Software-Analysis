@@ -25,6 +25,8 @@
  // 
  */
 
+#include <Graphs/ICFGNode.h>
+#include <Util/Casting.h>
 #include <set>
 #include "Assignment-2.h"
 #include <iostream>
@@ -36,13 +38,55 @@ using namespace std;
 /// Print the path in the format "START->1->2->4->5->END", where -> indicate an ICFGEdge connects two ICFGNode IDs
 
 void ICFGTraversal::collectICFGPath(std::vector<unsigned> &path){
+    string path_str = "";
+    path_str.append("START->") ;
 
+    for (int node: path) {
+        path_str.append(to_string(node));
+        path_str.append("->");
+    }
+
+    path_str.append("END");
+    cout << path_str << endl;
+    paths.insert(path_str);
 }
 
 
 /// TODO: Implement your context-sensitive ICFG traversal here to traverse each program path (once for any loop) from src to dst
 void ICFGTraversal::reachability(const ICFGNode *src, const ICFGNode *dst)
 {
+    std::pair<const ICFGNode*, CallStack> pair (src, callstack);
+    if (visited.count(pair) != 0) {
+        return;
+    }
 
+    visited.insert(pair);
+    path.push_back(src->getId());
+    if (src->getId() == dst->getId()) {
+        collectICFGPath(path);
+    }
+
+    for (const ICFGEdge* edge: src->getOutEdges()) {
+        if (edge->isIntraCFGEdge()) {
+            reachability(edge->getDstNode(), dst);
+        } else if (edge->isCallCFGEdge()) {
+            callstack.push_back(edge->getSrcNode());
+            reachability(edge->getDstNode(), dst);
+            callstack.pop_back();
+        } else if (RetICFGNode* retNode = SVFUtil::dyn_cast<RetICFGNode>(edge->getDstNode())) {
+            if (callstack.empty()) {
+                reachability(edge->getDstNode(), dst);
+            } else {
+                if (callstack.back() == retNode->getCallICFGNode()) {
+                    callstack.pop_back();
+                    reachability(edge->getDstNode(), dst);
+                    callstack.push_back(retNode->getCallICFGNode());
+                }
+            }
+        }
+    }
+
+    visited.erase(pair);
+    path.pop_back();
 
 }
